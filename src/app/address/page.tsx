@@ -29,6 +29,7 @@ import {
   DrivingSettings,
   UrbanSettings,
 } from '@/components/ScoreCardSettings';
+import AiAnalysis from '@/components/AiAnalysis';
 import { addToHistory } from '@/lib/history';
 import {
   computeScores,
@@ -37,6 +38,7 @@ import {
   WALKING_RADIUS_KM,
   DRIVING_RADIUS_KM,
 } from '@/lib/scoring';
+import { ScreenContext } from '@/lib/ai';
 import { Amenity, ScoreResult } from '@/types';
 
 function AddressInsightsContent() {
@@ -314,6 +316,33 @@ function AddressInsightsContent() {
           </Grid>
         </Grid>
       </Container>
+
+      {/* AI Analysis Chat — floating button + drawer */}
+      {!loading && scores && (
+        <AiAnalysis
+          context={{
+            address,
+            lat,
+            lng,
+            walkingScore: scores.walkingScore,
+            drivingScore: scores.drivingScore,
+            urbanIndex: scores.urbanIndex,
+            urbanLabel: scores.urbanLabel,
+            walkingRadiusKm: walkingSettings.radiusKm,
+            drivingRadiusKm: drivingSettings.radiusKm,
+            urbanRadiusKm: urbanSettings.radiusKm,
+            walkingBreakdown: scores.walkingBreakdown.map((b) => ({
+              category: b.label,
+              count: b.count,
+            })),
+            drivingBreakdown: scores.drivingBreakdown.map((b) => ({
+              category: b.label,
+              count: b.count,
+            })),
+            totalAmenities: amenities.length,
+          } satisfies ScreenContext}
+        />
+      )}
     </Box>
   );
 }
