@@ -1,7 +1,7 @@
 # Map Engine - Address Insights
 
 
-**Live App:**  https://map-engine-mfgmrak9l-ezra-gomolins-projects.vercel.app/
+**Live App:**  https://map-engine-lyart.vercel.app/
 
 ---
 
@@ -18,5 +18,5 @@
 Up to now about a hour in opus 4.6 generated all the code with my instructions and back and forth for the custom features I wanted (I made the decisions on scoring and features).
 
 
-
-#
+## Assumptions
+more than 20 amenities within 3km is urban, 10-19 is suburban, less than 10 is rural (not includign parks)
