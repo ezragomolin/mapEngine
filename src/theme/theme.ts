@@ -28,6 +28,18 @@ const theme = createTheme({
     borderRadius: 12,
   },
   components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        html: {
+          height: '100%',
+        },
+        body: {
+          minHeight: '100dvh',
+          margin: 0,
+          padding: 0,
+        },
+      },
+    },
     MuiCard: {
       styleOverrides: {
         root: {

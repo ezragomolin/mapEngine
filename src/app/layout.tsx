@@ -20,6 +20,10 @@ export const metadata: Metadata = {
     icon: '/favicon.png',
     apple: '/apple-touch-icon.png',
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+  },
 };
 
 export default function RootLayout({
@@ -33,6 +37,7 @@ export default function RootLayout({
         className={inter.className}
         style={{
           margin: 0,
+          padding: 0,
           minHeight: '100dvh',
           overscrollBehavior: 'none',
           WebkitTextSizeAdjust: '100%',

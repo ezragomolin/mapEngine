@@ -8,9 +8,14 @@ export default function Home() {
   return (
     <Box
       sx={{
-        minHeight: '100dvh',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         background:
           'linear-gradient(135deg, #1565c0 0%, #0d47a1 50%, #004d73 100%)',
+        overflowY: 'auto',
         display: 'flex',
         flexDirection: 'column',
       }}
@@ -18,13 +23,12 @@ export default function Home() {
       <Container
         maxWidth="md"
         sx={{
-          pt: { xs: 'calc(16px + env(safe-area-inset-top))', md: '80px' },
-          pb: { xs: 3, md: 6 },
+          pt: { xs: 'max(24px, env(safe-area-inset-top))', md: '80px' },
+          pb: { xs: 'max(24px, env(safe-area-inset-bottom))', md: 6 },
           px: { xs: 2, sm: 3 },
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: { xs: 'flex-start', md: 'flex-start' },
         }}
       >
         <Box sx={{ textAlign: 'center', mb: 5 }}>
