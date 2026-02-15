@@ -21,7 +21,10 @@ async function fetchCategory(
   radius: string,
   apiKey: string
 ): Promise<Amenity[]> {
-  const url = `https://api.geoapify.com/v2/places?categories=${group.categories}&filter=circle:${lng},${lat},${radius}&limit=20&apiKey=${apiKey}`;
+  // Scale limit based on radius — larger search area needs more results
+  const radiusM = parseInt(radius, 10) || 5000;
+  const limit = radiusM <= 5000 ? 20 : radiusM <= 10000 ? 30 : 40;
+  const url = `https://api.geoapify.com/v2/places?categories=${group.categories}&filter=circle:${lng},${lat},${radius}&limit=${limit}&apiKey=${apiKey}`;
 
   const res = await fetch(url);
   if (!res.ok) return [];

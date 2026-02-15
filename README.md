@@ -19,4 +19,6 @@ Up to now about a hour in opus 4.6 generated all the code with my instructions a
 
 
 ## Assumptions
-more than 20 amenities within 3km is urban, 10-19 is suburban, less than 10 is rural (not includign parks)
+-Used a weigthed average of amenities compared to ideal ammenities for scoring.
+-Decided to allow users to change the parameters and input what their ideal scores are and what they actually conisder urban
+- Originally we get ammenities within 5km radius but i addes that when a user changes a radius beyond that 5km we actually refetch ammenities so that we can get the results and also bump up the limit per number of ammenities (initially we get max 20 items for speed).

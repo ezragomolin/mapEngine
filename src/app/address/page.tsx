@@ -21,10 +21,23 @@ import InsightsMap from '@/components/InsightsMap';
 import ScoreCard from '@/components/ScoreCard';
 import AmenityBreakdown from '@/components/AmenityBreakdown';
 import ShareButton from '@/components/ShareButton';
-import ScoreSettings from '@/components/ScoreSettings';
+import {
+  WalkingSettingsButton,
+  DrivingSettingsButton,
+  UrbanSettingsButton,
+  WalkingSettings,
+  DrivingSettings,
+  UrbanSettings,
+} from '@/components/ScoreCardSettings';
 import { addToHistory } from '@/lib/history';
-import { computeScores, PERFECT_WALKING, PERFECT_DRIVING, CustomTargets } from '@/lib/scoring';
-import { Amenity, AmenityCategory, ScoreResult } from '@/types';
+import {
+  computeScores,
+  PERFECT_WALKING,
+  PERFECT_DRIVING,
+  WALKING_RADIUS_KM,
+  DRIVING_RADIUS_KM,
+} from '@/lib/scoring';
+import { Amenity, ScoreResult } from '@/types';
 
 function AddressInsightsContent() {
   const searchParams = useSearchParams();
@@ -37,32 +50,66 @@ function AddressInsightsContent() {
   const [scores, setScores] = useState<ScoreResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [walkingTargets, setWalkingTargets] = useState<Record<AmenityCategory, number>>({ ...PERFECT_WALKING });
-  const [drivingTargets, setDrivingTargets] = useState<Record<AmenityCategory, number>>({ ...PERFECT_DRIVING });
+
+  // Per-score settings
+  const [walkingSettings, setWalkingSettings] = useState<WalkingSettings>({
+    radiusKm: WALKING_RADIUS_KM,
+    targets: { ...PERFECT_WALKING },
+  });
+  const [drivingSettings, setDrivingSettings] = useState<DrivingSettings>({
+    radiusKm: DRIVING_RADIUS_KM,
+    targets: { ...PERFECT_DRIVING },
+  });
+  const [urbanSettings, setUrbanSettings] = useState<UrbanSettings>({
+    radiusKm: 3.0,
+    urbanThreshold: 20,
+    suburbanThreshold: 10,
+  });
 
   // Ref to always have access to latest amenities (avoids stale closures)
   const amenitiesRef = useRef<Amenity[]>([]);
+  // Track the radius we last fetched at so we know when to re-fetch
+  const fetchedRadiusRef = useRef<number>(0);
 
-  const handleSettingsSave = (
-    walking: Record<AmenityCategory, number>,
-    driving: Record<AmenityCategory, number>
+  const recomputeScores = (
+    data: Amenity[],
+    ws: WalkingSettings,
+    ds: DrivingSettings,
+    us: UrbanSettings
   ) => {
-    setWalkingTargets(walking);
-    setDrivingTargets(driving);
-    const data = amenitiesRef.current;
-    if (data.length > 0) {
-      setScores(
-        computeScores(data, lat, lng, { walking, driving })
-      );
-    }
+    if (data.length === 0) return;
+    setScores(
+      computeScores(data, lat, lng, {
+        walkingRadiusKm: ws.radiusKm,
+        drivingRadiusKm: ds.radiusKm,
+        urbanRadiusKm: us.radiusKm,
+        urbanThreshold: us.urbanThreshold,
+        suburbanThreshold: us.suburbanThreshold,
+        walkingTargets: ws.targets,
+        drivingTargets: ds.targets,
+      })
+    );
   };
 
-  const fetchAmenities = async () => {
+  const fetchAmenities = async (
+    ws: WalkingSettings,
+    ds: DrivingSettings,
+    us: UrbanSettings
+  ) => {
+    const neededRadiusKm = Math.max(ws.radiusKm, ds.radiusKm, us.radiusKm);
+    const neededRadiusM = Math.ceil(neededRadiusKm * 1000);
+
+    // Skip re-fetch if we already have data covering this radius
+    if (fetchedRadiusRef.current >= neededRadiusM && amenitiesRef.current.length > 0) {
+      recomputeScores(amenitiesRef.current, ws, ds, us);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
       const res = await fetch(
-        `/api/amenities?lat=${lat}&lng=${lng}&radius=5000`
+        `/api/amenities?lat=${lat}&lng=${lng}&radius=${neededRadiusM}`
       );
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -72,7 +119,8 @@ function AddressInsightsContent() {
       const fetchedAmenities: Amenity[] = data.amenities || [];
       setAmenities(fetchedAmenities);
       amenitiesRef.current = fetchedAmenities;
-      setScores(computeScores(fetchedAmenities, lat, lng));
+      fetchedRadiusRef.current = neededRadiusM;
+      recomputeScores(fetchedAmenities, ws, ds, us);
     } catch (err: any) {
       setError(
         err.message || 'Failed to load amenity data. Please try again.'
@@ -82,12 +130,27 @@ function AddressInsightsContent() {
     }
   };
 
+  const handleWalkingSave = (ws: WalkingSettings) => {
+    setWalkingSettings(ws);
+    fetchAmenities(ws, drivingSettings, urbanSettings);
+  };
+
+  const handleDrivingSave = (ds: DrivingSettings) => {
+    setDrivingSettings(ds);
+    fetchAmenities(walkingSettings, ds, urbanSettings);
+  };
+
+  const handleUrbanSave = (us: UrbanSettings) => {
+    setUrbanSettings(us);
+    fetchAmenities(walkingSettings, drivingSettings, us);
+  };
+
   useEffect(() => {
     if (!lat && !lng) return;
 
     // Save to search history
     addToHistory({ address, lat, lng });
-    fetchAmenities();
+    fetchAmenities(walkingSettings, drivingSettings, urbanSettings);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lat, lng]);
 
@@ -121,11 +184,6 @@ function AddressInsightsContent() {
               {address}
             </Typography>
           </Box>
-          <ScoreSettings
-            walkingTargets={walkingTargets}
-            drivingTargets={drivingTargets}
-            onSave={handleSettingsSave}
-          />
           <ShareButton />
         </Toolbar>
       </AppBar>
@@ -139,7 +197,7 @@ function AddressInsightsContent() {
               <Button
                 color="inherit"
                 size="small"
-                onClick={fetchAmenities}
+                onClick={() => fetchAmenities(walkingSettings, drivingSettings, urbanSettings)}
               >
                 Retry
               </Button>
@@ -162,63 +220,94 @@ function AddressInsightsContent() {
 
           {/* Score Cards */}
           <Grid item xs={12} md={4}>
-            <Grid container spacing={2}>
-              <Grid item xs={4} md={12}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'row', md: 'column' },
+                gap: 1.5,
+                height: { md: 500 },
+              }}
+            >
+              <Box sx={{ flex: 1, minWidth: 0, minHeight: 0 }}>
                 <ScoreCard
                   title="Walking Score"
                   score={scores?.walkingScore ?? 0}
                   maxScore={100}
+                  subtitle={`${walkingSettings.radiusKm.toFixed(1)} km radius`}
                   icon={
                     <DirectionsWalkIcon
-                      sx={{ fontSize: 32, color: '#4caf50' }}
+                      sx={{ fontSize: 24, color: '#4caf50' }}
                     />
                   }
                   color="#4caf50"
                   loading={loading}
+                  settingsSlot={
+                    <WalkingSettingsButton
+                      settings={walkingSettings}
+                      onSave={handleWalkingSave}
+                      color="#4caf50"
+                    />
+                  }
                 />
-              </Grid>
-              <Grid item xs={4} md={12}>
+              </Box>
+              <Box sx={{ flex: 1, minWidth: 0, minHeight: 0 }}>
                 <ScoreCard
                   title="Driving Score"
                   score={scores?.drivingScore ?? 0}
                   maxScore={100}
+                  subtitle={`${drivingSettings.radiusKm.toFixed(1)} km radius`}
                   icon={
                     <DirectionsCarIcon
-                      sx={{ fontSize: 32, color: '#2196f3' }}
+                      sx={{ fontSize: 24, color: '#2196f3' }}
                     />
                   }
                   color="#2196f3"
                   loading={loading}
+                  settingsSlot={
+                    <DrivingSettingsButton
+                      settings={drivingSettings}
+                      onSave={handleDrivingSave}
+                      color="#2196f3"
+                    />
+                  }
                 />
-              </Grid>
-              <Grid item xs={4} md={12}>
+              </Box>
+              <Box sx={{ flex: 1, minWidth: 0, minHeight: 0 }}>
                 <ScoreCard
                   title="Urban Index"
                   score={scores?.urbanIndex ?? 0}
                   label={scores?.urbanLabel}
+                  subtitle={`${urbanSettings.radiusKm.toFixed(1)} km radius`}
                   icon={
                     <LocationCityIcon
-                      sx={{ fontSize: 32, color: '#ff9800' }}
+                      sx={{ fontSize: 24, color: '#ff9800' }}
                     />
                   }
                   color="#ff9800"
                   loading={loading}
+                  settingsSlot={
+                    <UrbanSettingsButton
+                      settings={urbanSettings}
+                      onSave={handleUrbanSave}
+                      color="#ff9800"
+                    />
+                  }
                 />
-              </Grid>
-            </Grid>
+              </Box>
+            </Box>
           </Grid>
 
           {/* Amenity Breakdowns */}
           <Grid item xs={12} md={6}>
             <AmenityBreakdown
-              title="Walking Radius (1 km)"
+              title={`Walking Radius (${walkingSettings.radiusKm.toFixed(1)} km)`}
               breakdown={scores?.walkingBreakdown ?? []}
               loading={loading}
             />
           </Grid>
           <Grid item xs={12} md={6}>
             <AmenityBreakdown
-              title="Driving Radius (5 km)"
+              title={`Driving Radius (${drivingSettings.radiusKm.toFixed(1)} km)`}
               breakdown={scores?.drivingBreakdown ?? []}
               loading={loading}
             />

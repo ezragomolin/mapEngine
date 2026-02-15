@@ -12,9 +12,12 @@ interface ScoreCardProps {
   score: number;
   maxScore?: number;
   label?: string;
+  subtitle?: string;
   icon: React.ReactNode;
   color: string;
   loading?: boolean;
+  /** Slot for a settings button rendered in top-right corner */
+  settingsSlot?: React.ReactNode;
 }
 
 export default function ScoreCard({
@@ -22,37 +25,56 @@ export default function ScoreCard({
   score,
   maxScore,
   label,
+  subtitle,
   icon,
   color,
   loading,
+  settingsSlot,
 }: ScoreCardProps) {
   return (
-    <Card sx={{ height: '100%' }}>
-      <CardContent sx={{ textAlign: 'center', py: 3 }}>
-        <Box sx={{ mb: 1 }}>{icon}</Box>
-        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+    <Card sx={{ height: '100%', position: 'relative' }}>
+      {settingsSlot}
+      <CardContent
+        sx={{
+          textAlign: 'center',
+          py: 1.5,
+          px: 1.5,
+          '&:last-child': { pb: 1.5 },
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%',
+          overflow: 'hidden',
+        }}
+      >
+        <Box sx={{ mb: 0.25, lineHeight: 1 }}>{icon}</Box>
+        <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.2, fontWeight: 600 }}>
           {title}
         </Typography>
         {loading ? (
-          <CircularProgress size={60} sx={{ my: 2 }} />
+          <CircularProgress size={44} sx={{ my: 0.5 }} />
         ) : maxScore ? (
           <Box
-            sx={{ position: 'relative', display: 'inline-flex', my: 1 }}
+            sx={{
+              position: 'relative',
+              display: 'inline-flex',
+              my: 0.25,
+              width: 56,
+              height: 56,
+            }}
           >
             <CircularProgress
               variant="determinate"
               value={(score / maxScore) * 100}
-              size={80}
-              thickness={6}
-              sx={{ color }}
+              size={56}
+              thickness={3}
+              sx={{ color, position: 'absolute', top: 0, left: 0 }}
             />
             <Box
               sx={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                bottom: 0,
-                right: 0,
+                width: 56,
+                height: 56,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -60,30 +82,37 @@ export default function ScoreCard({
               }}
             >
               <Typography
-                variant="h5"
-                sx={{ fontWeight: 700, color, lineHeight: 1 }}
+                sx={{ fontWeight: 700, color, lineHeight: 1, fontSize: '1.15rem' }}
               >
                 {score}
               </Typography>
-              <Typography variant="caption" color="text.secondary">
+              <Typography
+                sx={{ fontSize: '0.65rem', lineHeight: 1, color: 'text.secondary' }}
+              >
                 /{maxScore}
               </Typography>
             </Box>
           </Box>
         ) : (
           <Typography
-            variant="h3"
-            sx={{ fontWeight: 700, color, my: 1 }}
+            variant="h5"
+            sx={{ fontWeight: 700, color, my: 0.25 }}
           >
             {score}
           </Typography>
         )}
         {label && (
           <Typography
-            variant="body2"
-            sx={{ mt: 1, fontWeight: 600, color }}
+            sx={{ fontWeight: 600, color, lineHeight: 1.2, fontSize: '0.8rem' }}
           >
             {label}
+          </Typography>
+        )}
+        {subtitle && (
+          <Typography
+            sx={{ fontSize: '0.65rem', color: 'text.secondary', mt: 0.25, lineHeight: 1 }}
+          >
+            {subtitle}
           </Typography>
         )}
       </CardContent>

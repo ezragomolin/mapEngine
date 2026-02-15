@@ -191,31 +191,48 @@ function computeUrbanIndex(
 // ║                       MAIN ENTRY POINT                          ║
 // ╚══════════════════════════════════════════════════════════════════╝
 
-export interface CustomTargets {
-  walking?: Record<AmenityCategory, number>;
-  driving?: Record<AmenityCategory, number>;
+export interface ScoringOptions {
+  walkingRadiusKm?: number;
+  drivingRadiusKm?: number;
+  urbanRadiusKm?: number;
+  urbanThreshold?: number;
+  suburbanThreshold?: number;
+  walkingTargets?: Record<AmenityCategory, number>;
+  drivingTargets?: Record<AmenityCategory, number>;
 }
 
 /**
  * Compute all scores for a set of amenities around a center point.
- * Optionally pass customTargets to override what counts as a perfect score.
+ * Pass options to override radii, thresholds, or perfect-score targets.
  */
 export function computeScores(
   amenities: Amenity[],
   centerLat: number,
   centerLng: number,
-  customTargets?: CustomTargets
+  options?: ScoringOptions
 ): ScoreResult {
-  const walkingAmenities = filterByRadius(amenities, centerLat, centerLng, WALKING_RADIUS_KM);
-  const drivingAmenities = filterByRadius(amenities, centerLat, centerLng, DRIVING_RADIUS_KM);
+  const walkRadius = options?.walkingRadiusKm ?? WALKING_RADIUS_KM;
+  const driveRadius = options?.drivingRadiusKm ?? DRIVING_RADIUS_KM;
+  const urbanRadius = options?.urbanRadiusKm ?? 3.0;
+  const urbanThresh = options?.urbanThreshold ?? 20;
+  const suburbanThresh = options?.suburbanThreshold ?? 10;
 
-  const urban = computeUrbanIndex(amenities, centerLat, centerLng);
+  const walkingAmenities = filterByRadius(amenities, centerLat, centerLng, walkRadius);
+  const drivingAmenities = filterByRadius(amenities, centerLat, centerLng, driveRadius);
+
+  // Urban index
+  const nearbyUrban = filterByRadius(amenities, centerLat, centerLng, urbanRadius);
+  const urbanTotal = nearbyUrban.filter((a) => a.category !== 'park').length;
+  let urbanLabel: string;
+  if (urbanTotal >= urbanThresh) urbanLabel = 'Urban';
+  else if (urbanTotal >= suburbanThresh) urbanLabel = 'Suburban';
+  else urbanLabel = 'Rural';
 
   return {
-    walkingScore: computeScore(walkingAmenities, 'walking', customTargets?.walking),
-    drivingScore: computeScore(drivingAmenities, 'driving', customTargets?.driving),
-    urbanIndex: urban.index,
-    urbanLabel: urban.label,
+    walkingScore: computeScore(walkingAmenities, 'walking', options?.walkingTargets),
+    drivingScore: computeScore(drivingAmenities, 'driving', options?.drivingTargets),
+    urbanIndex: urbanTotal,
+    urbanLabel,
     walkingBreakdown: getCategoryCounts(walkingAmenities),
     drivingBreakdown: getCategoryCounts(drivingAmenities),
   };
