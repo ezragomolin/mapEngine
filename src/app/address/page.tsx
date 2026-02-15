@@ -167,9 +167,16 @@ function AddressInsightsContent() {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-      <AppBar position="static" elevation={0} sx={{ bgcolor: 'primary.main' }}>
-        <Toolbar>
+    <Box sx={{ minHeight: '100dvh', bgcolor: 'background.default' }}>
+      <AppBar
+        position="sticky"
+        elevation={0}
+        sx={{
+          bgcolor: 'primary.main',
+          pt: 'env(safe-area-inset-top)',
+        }}
+      >
+        <Toolbar sx={{ minHeight: { xs: 52 }, px: { xs: 1.5 } }}>
           <IconButton
             edge="start"
             color="inherit"
@@ -190,7 +197,7 @@ function AddressInsightsContent() {
         </Toolbar>
       </AppBar>
 
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 }, px: { xs: 1.5, sm: 2, md: 3 } }}>
         {error && (
           <Alert
             severity="error"
@@ -209,7 +216,7 @@ function AddressInsightsContent() {
           </Alert>
         )}
 
-        <Grid container spacing={3}>
+        <Grid container spacing={{ xs: 2, md: 3 }}>
           {/* Map */}
           <Grid item xs={12} md={8}>
             <InsightsMap

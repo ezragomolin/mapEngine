@@ -182,7 +182,7 @@ export default function AiAnalysis({ context }: AiAnalysisProps) {
         onClick={handleOpen}
         sx={{
           position: 'fixed',
-          bottom: 24,
+          bottom: 'calc(24px + env(safe-area-inset-bottom))',
           right: 24,
           zIndex: 1200,
           borderRadius: '28px',
@@ -437,7 +437,8 @@ export default function AiAnalysis({ context }: AiAnalysisProps) {
             display: 'flex',
             gap: 1,
             px: 2,
-            py: 1.5,
+            pt: 1.5,
+            pb: 'calc(12px + env(safe-area-inset-bottom))',
             borderTop: '1px solid',
             borderColor: 'divider',
             bgcolor: 'white',

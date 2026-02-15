@@ -113,7 +113,7 @@ export default function InsightsMap({
       sx={{
         position: 'relative',
         width: '100%',
-        height: { xs: 350, md: 500 },
+        height: { xs: '55dvh', md: 500 },
         borderRadius: 3,
         overflow: 'hidden',
         bgcolor: 'grey.100',
